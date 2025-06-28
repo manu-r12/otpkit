@@ -27,7 +27,7 @@ struct GetDirectionsButton: View {
                 }
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .padding(.vertical, 14)
                 .background(originName.isEmpty || destinationName.isEmpty ? Color.gray : Color.green)
                 .cornerRadius(12)
                 .opacity(originName.isEmpty || destinationName.isEmpty ? 0.6 : 1.0)

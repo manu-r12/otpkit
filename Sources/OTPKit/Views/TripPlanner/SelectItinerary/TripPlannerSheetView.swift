@@ -2,14 +2,17 @@
 //  TripPlannerSheetView.swift
 //  OTPKit
 //
-//  Created by Hilmy Veradin on 25/07/24.
+//  Enhanced with simplified location reselection
 //
 
 import SwiftUI
 
 public struct TripPlannerSheetView: View {
     @Environment(TripPlannerService.self) private var tripPlanner
+    @Environment(OriginDestinationSheetEnvironment.self) private var sheetEnvironment
     @Environment(\.dismiss) var dismiss
+
+    @State private var showLocationSelection = false
 
     // MARK: - ViewModel
     private var viewModel: TripPlannerSheetViewModel {
@@ -29,26 +32,6 @@ public struct TripPlannerSheetView: View {
             }
 
             cancelButton()
-        }
-        .alert(
-            viewModel.currentError?.title ?? "Error",
-            isPresented: Binding(
-                get: { viewModel.showErrorAlert },
-                set: { _ in viewModel.clearError() }
-            )
-        ) {
-            Button("OK") {
-                viewModel.clearError()
-            }
-        } message: {
-            Text(viewModel.currentError?.errorDescription ?? "")
-        }
-        .overlay {
-            if viewModel.isLoading {
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(.regularMaterial)
-            }
         }
     }
 
@@ -129,9 +112,17 @@ public struct TripPlannerSheetView: View {
         }
     }
 
+    // REFACTORED: Using the new NoRoutesFoundView
     private func noItinerariesView() -> some View {
-        Text(viewModel.noTripPlannerMessage)
-            .padding()
+        NoRoutesFoundView(
+            originName: tripPlanner.originName,
+            destinationName: tripPlanner.destinationName
+        ) {
+            // Dismiss the entire TripPlannerSheetView
+            dismiss()
+            // Reset trip planner to show OriginDestinationView in parent
+            tripPlanner.resetTripPlanner()
+        }
     }
 
     private func cancelButton() -> some View {

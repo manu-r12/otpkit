@@ -8,14 +8,12 @@
 import MapKit
 import SwiftUI
 
-/// Main Extension View that take Map as it's content
 /// This simplify all the process of making the Trip Planner UI
 public struct TripPlannerExtensionView<MapContent: View>: View {
     @Environment(OriginDestinationSheetEnvironment.self) private var sheetEnvironment
     @Environment(TripPlannerService.self) private var tripPlanner
 
     @State private var directionSheetDetent: PresentationDetent = .fraction(0.2)
-
 
     // MARK: - ViewModel
     private var viewModel: TripPlannerExtensionViewModel {
@@ -24,6 +22,7 @@ public struct TripPlannerExtensionView<MapContent: View>: View {
             sheetEnvironment: sheetEnvironment
         )
     }
+
 
     private let mapContent: () -> MapContent
 

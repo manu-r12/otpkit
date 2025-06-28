@@ -39,17 +39,15 @@ public struct OriginDestinationView: View {
                     .lineLimit(2)
                 Spacer()
             }
-            .padding(7)
+            .padding(8)
             .background(Color(.secondarySystemBackground))
-            .cornerRadius(10)
-            .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
         })
         .foregroundStyle(.foreground)
     }
 
     public var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 8) {
+            VStack(spacing: 0){
                 // Origin Button
                 originDestinationField(icon: "paperplane.fill", text: tripPlanner.originName) {
                     sheetEnvironment.isSheetOpened.toggle()
@@ -69,19 +67,16 @@ public struct OriginDestinationView: View {
                     isDatePickerVisible: $isDatePickerVisible,
                     isTimePickerVisible: $isTimePickerVisible
                 )
-                .padding(.vertical, 6)
                 .background(Color(.secondarySystemBackground))
-                .cornerRadius(10)
-                .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
-                .padding(.top, 8)
 
                 // Get directions button
                 getDirectionsButtonView()
             }
+            .cornerRadius(10)
             .padding(.horizontal)
             .padding(.vertical, 6)
+            .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
-        .background()
     }
 
     // MARK: DirectionsButton

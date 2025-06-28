@@ -10,8 +10,9 @@ import SwiftUI
 
 /// ViewModel for TripPlannerSheetView
 /// Handles itinerary selection and trip planning logic
+/// Note: This view only displays results, doesn't handle API calls or errors
 @Observable
-final class TripPlannerSheetViewModel: BaseViewModel {
+final class TripPlannerSheetViewModel {
 
     // MARK: - Dependencies
     private let tripPlannerService: TripPlannerService
@@ -28,7 +29,7 @@ final class TripPlannerSheetViewModel: BaseViewModel {
         !availableItineraries.isEmpty
     }
 
-    /// Error message when no trip planner data is available
+    /// Message when no trip planner data is available
     var noTripPlannerMessage: String {
         "Can't find trip planner. Please try another pin point"
     }
@@ -37,7 +38,6 @@ final class TripPlannerSheetViewModel: BaseViewModel {
 
     init(tripPlannerService: TripPlannerService) {
         self.tripPlannerService = tripPlannerService
-        super.init()
     }
 
     // MARK: - Public Methods
@@ -83,11 +83,3 @@ final class TripPlannerSheetViewModel: BaseViewModel {
     }
 }
 
-// MARK: - Supporting Types
-
-/// Enum to determine which leg view to display
-enum TripLegViewType {
-    case vehicle
-    case walk
-    case unknown
-}
