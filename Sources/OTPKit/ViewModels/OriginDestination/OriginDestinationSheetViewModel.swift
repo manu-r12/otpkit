@@ -2,58 +2,73 @@
 //  OriginDestinationSheetViewModel.swift
 //  OTPKit
 //
-//  Created by Manu on 2025-06-06.
+//  Created by Hilmy Veradin on 18/07/24.
 //
 
 import Foundation
-import SwiftUI
+import CoreLocation
 
 /// ViewModel for OriginDestinationSheetView
 /// Handles search, location selection, favorites, and recent locations logic
 @Observable
-final class OriginDestinationSheetViewModel: BaseViewModel {
+public final class OriginDestinationSheetViewModel: BaseViewModel {
 
     // MARK: - Dependencies
-    private let tripPlannerService: TripPlannerService
+    private let tripPlannerService: TripPlannerCoordinatorService
     private let sheetEnvironment: OriginDestinationSheetEnvironment
     private let userDefaultsService: UserDefaultsServices
 
     // MARK: - Published Properties
 
     /// Current search text
-    var searchText: String = ""
+    public var searchText = ""
 
     /// Search focus state
-    var isSearchFocused: Bool = false
+    public var isSearchFocused = false
 
     /// Current location type being selected
-    var currentLocationType: LocationType {
+    public var currentState: OriginDestinationState {
         tripPlannerService.originDestinationState == .origin ? .origin : .destination
     }
 
     /// Search completions from the trip planner service
-    var searchCompletions: [Location] {
+    public var completions: [Location] {
         tripPlannerService.completions
     }
 
     /// Favorite locations
-    var favoriteLocations: [Location] {
-        sheetEnvironment.favoriteLocations
+    public var favoriteLocations: [Location] {
+        switch userDefaultsService.getFavoriteLocationsData() {
+        case .success(let locations):
+            return locations
+        case .failure:
+            return []
+        }
     }
 
     /// Recent locations
-    var recentLocations: [Location] {
-        sheetEnvironment.recentLocations
+    public var recentLocations: [Location] {
+        switch userDefaultsService.getRecentLocations() {
+        case .success(let locations):
+            return locations
+        case .failure:
+            return []
+        }
     }
 
     /// Current user location
-    var currentUserLocation: Location? {
+    public var currentLocation: Location? {
         tripPlannerService.currentLocation
     }
 
     /// Page title based on current selection type
-    var pageTitle: String {
-        "Choose \(currentLocationType.capitalizedName)"
+    public var pageTitle: String {
+        switch currentState {
+        case .origin:
+            return "Select Origin"
+        case .destination:
+            return "Select Destination"
+        }
     }
 
     // MARK: - Computed Properties
@@ -61,7 +76,7 @@ final class OriginDestinationSheetViewModel: BaseViewModel {
     /// Filtered completions (excludes favorites)
     var filteredCompletions: [Location] {
         let favorites = favoriteLocations
-        return searchCompletions.filter { completion in
+        return completions.filter { completion in
             !favorites.contains { favorite in
                 favorite.title == completion.title &&
                 favorite.subTitle == completion.subTitle &&
@@ -78,7 +93,7 @@ final class OriginDestinationSheetViewModel: BaseViewModel {
 
     /// Should show current user section
     var shouldShowCurrentUserSection: Bool {
-        searchText.isEmpty && isSearchFocused && currentUserLocation != nil
+        searchText.isEmpty && isSearchFocused && currentLocation != nil
     }
 
     /// Should show location selection section
@@ -103,9 +118,11 @@ final class OriginDestinationSheetViewModel: BaseViewModel {
 
     // MARK: - Initialization
 
-    init(tripPlannerService: TripPlannerService,
-         sheetEnvironment: OriginDestinationSheetEnvironment,
-         userDefaultsService: UserDefaultsServices) {
+    public init(
+        tripPlannerService: TripPlannerCoordinatorService,
+        sheetEnvironment: OriginDestinationSheetEnvironment,
+        userDefaultsService: UserDefaultsServices
+    ) {
         self.tripPlannerService = tripPlannerService
         self.sheetEnvironment = sheetEnvironment
         self.userDefaultsService = userDefaultsService
@@ -115,37 +132,47 @@ final class OriginDestinationSheetViewModel: BaseViewModel {
     // MARK: - Public Methods
 
     /// Updates search query and triggers completion search
-    func updateSearchQuery(_ query: String) {
-        searchText = query
+    public func updateSearchQuery(_ query: String) {
         tripPlannerService.updateQuery(queryFragment: query)
     }
 
     /// Handles location selection and updates trip planner
-    func selectLocation(_ location: Location) {
-        updateTripPlanner(for: location)
-        saveToRecentLocations(location)
-    }
-
-    private func mockSelection(_ location: Location) {
-        // connect it with mock
+    public func selectLocation(_ location: Location) {
+        switch tripPlannerService.originDestinationState {
+        case .origin:
+            tripPlannerService.originName = location.title
+            tripPlannerService.originCoordinate = CLLocationCoordinate2D(
+                latitude: location.latitude,
+                longitude: location.longitude
+            )
+        case .destination:
+            tripPlannerService.destinationName = location.title
+            tripPlannerService.destinationCoordinate = CLLocationCoordinate2D(
+                latitude: location.latitude,
+                longitude: location.longitude
+            )
+        }
+        
+        _ = userDefaultsService.saveRecentLocations(data: location)
+        
+        // Dismiss the main origin destination sheet
+        dismissMainSheet()
     }
 
     /// Selects current user location
-    func selectCurrentUserLocation() {
-        guard let userLocation = currentUserLocation else {
-            handleError(OTPKitError.locationUnavailable)
-            return
-        }
-        selectLocation(userLocation)
+    public func selectCurrentUserLocation() {
+        guard let location = currentLocation else { return }
+        selectLocation(location)
     }
 
     /// Triggers map marking mode
-    func selectLocationOnMap() {
+    public func selectLocationOnMap() {
         tripPlannerService.toggleMapMarkingMode(true)
+        dismissMainSheet()
     }
 
     /// Adds location to favorites
-    func addToFavorites(_ location: Location) {
+    public func addToFavorites(_ location: Location) {
         executeTask {
             switch self.userDefaultsService.saveFavoriteLocationData(data: location) {
             case .success:
@@ -160,37 +187,29 @@ final class OriginDestinationSheetViewModel: BaseViewModel {
 
     /// Removes location from favorites
     public func removeFromFavorites(_ location: Location) {
-        executeTask {
-            switch self.userDefaultsService.deleteFavoriteLocationData(with: location.id) {
-            case .success:
-                await MainActor.run {
-                    self.sheetEnvironment.refreshFavoriteLocations()
-                }
-            case .failure(let error):
-                throw OTPKitError.deleteFailed("favorite location: \(error.localizedDescription)")
-            }
-        }
+        _ = userDefaultsService.deleteFavoriteLocationData(with: location.id)
     }
 
     /// Refreshes data when view appears
-    func onViewAppear() {
+    public func onViewAppear() {
         sheetEnvironment.refreshFavoriteLocations()
         sheetEnvironment.refreshRecentLocations()
     }
 
-    // MARK: - Private Methods
-
-    private func updateTripPlanner(for location: Location) {
-        tripPlannerService.appendMarker(location: location)
-        tripPlannerService.addOriginDestinationData()
+    /// Clears current error
+    public override func clearError() {
+        currentError = nil
+        showErrorAlert = false
     }
 
-    private func saveToRecentLocations(_ location: Location) {
-        switch userDefaultsService.saveRecentLocations(data: location) {
-        case .success:
-            break // Silent success for recent locations
-        case .failure:
-            break // Don't show error for recent locations failure
-        }
+    // MARK: - Private Methods
+
+    private func mockSelection(_ location: Location) {
+        // connect it with mock
+    }
+
+    /// Dismisses the main origin destination sheet
+    private func dismissMainSheet() {
+        tripPlannerService.isOriginDestinationSheetPresented = false
     }
 }

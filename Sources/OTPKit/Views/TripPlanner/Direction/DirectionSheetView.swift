@@ -2,18 +2,20 @@ import MapKit
 import SwiftUI
 
 public struct DirectionSheetView: View {
-    @Environment(TripPlannerService.self) private var tripPlanner
     @Environment(\.dismiss) private var dismiss
     @Binding var sheetDetent: PresentationDetent
     @State private var scrollToItem: String?
 
+    private let tripPlanner: TripPlannerCoordinatorService
+
     // MARK: - ViewModel
     private var viewModel: DirectionSheetViewModel {
-        DirectionSheetViewModel(tripPlannerService: tripPlanner)
+        DirectionSheetViewModel(tripPlanner: tripPlanner)
     }
 
     // MARK: - Initialization
-    public init(sheetDetent: Binding<PresentationDetent>) {
+    public init(tripPlanner: TripPlannerCoordinatorService, sheetDetent: Binding<PresentationDetent>) {
+        self.tripPlanner = tripPlanner
         _sheetDetent = sheetDetent
     }
 
@@ -150,5 +152,8 @@ public struct DirectionSheetView: View {
 }
 
 #Preview {
-    DirectionSheetView(sheetDetent: .constant(.fraction(0.2)))
+    let tripPlanner = TripPlannerServiceFactory.create(
+        baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!
+    )
+    return DirectionSheetView(tripPlanner: tripPlanner, sheetDetent: .constant(.fraction(0.2)))
 }

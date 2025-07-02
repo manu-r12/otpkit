@@ -1,49 +1,35 @@
 //
 //  MoreFavoriteLocationsSheet.swift
-//  OTPKitDemo
+//  OTPKit
 //
-//  Created by Hilmy Veradin on 03/07/24.
+//  Created by Hilmy Veradin on 18/07/24.
 //
 
 import SwiftUI
 
 /// Show all the lists of favorite locations
 public struct MoreFavoriteLocationsSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(OriginDestinationSheetEnvironment.self) private var sheetEnvironment
-    @Environment(TripPlannerService.self) private var tripPlanner
+    private let tripPlanner: TripPlannerCoordinatorService
 
-    @State private var isDetailSheetOpened = false
+    public init(tripPlanner: TripPlannerCoordinatorService) {
+        self.tripPlanner = tripPlanner
+    }
 
     public var body: some View {
+        NavigationView {
         VStack {
-            PageHeaderView(text: "Favorites") {
-                dismiss()
-            }
+                Text("More Favorite Locations")
+                    .font(.title)
             .padding()
-
-            List {
-                ForEach(sheetEnvironment.favoriteLocations) { location in
-                    Button(action: {
-                        sheetEnvironment.selectedFavoriteLocation = location
-                        dismiss()
-                    }, label: {
-                        VStack(alignment: .leading) {
-                            Text(location.title)
-                                .font(.headline)
-                            Text(location.subTitle)
-                        }
-                        .foregroundStyle(.foreground)
-                    })
-                }
+                Spacer()
             }
-            .sheet(isPresented: $isDetailSheetOpened, content: {
-                FavoriteLocationDetailSheet()
-            })
         }
     }
 }
 
 #Preview {
-    MoreFavoriteLocationsSheet()
+    let tripPlanner = TripPlannerServiceFactory.create(
+        baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!
+    )
+    return MoreFavoriteLocationsSheet(tripPlanner: tripPlanner)
 }

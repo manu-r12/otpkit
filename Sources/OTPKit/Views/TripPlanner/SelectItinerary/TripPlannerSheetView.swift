@@ -8,19 +8,22 @@
 import SwiftUI
 
 public struct TripPlannerSheetView: View {
-    @Environment(TripPlannerService.self) private var tripPlanner
     @Environment(OriginDestinationSheetEnvironment.self) private var sheetEnvironment
     @Environment(\.dismiss) var dismiss
 
     @State private var showLocationSelection = false
 
+    private let tripPlanner: TripPlannerCoordinatorService
+
     // MARK: - ViewModel
     private var viewModel: TripPlannerSheetViewModel {
-        TripPlannerSheetViewModel(tripPlannerService: tripPlanner)
+        TripPlannerSheetViewModel(tripPlanner: tripPlanner)
     }
 
     // MARK: - Initialization
-    public init() {}
+    public init(tripPlanner: TripPlannerCoordinatorService) {
+        self.tripPlanner = tripPlanner
+    }
 
     // MARK: - Body
     public var body: some View {
@@ -70,24 +73,26 @@ public struct TripPlannerSheetView: View {
         }
     }
 
-    private func legsFlow(itinerary: Itinerary) -> some View {
-        FlowLayout {
-            ForEach(Array(zip(itinerary.legs.indices, itinerary.legs)), id: \.1) { index, leg in
-                legView(for: leg)
+    private func previewButton(itinerary: Itinerary) -> some View {
+        Button(action: {
+            viewModel.previewItinerary(itinerary)
+            dismiss()
+        }) {
+            Image(systemName: "eye")
+                .foregroundStyle(.blue)
+        }
+    }
 
-                if index < itinerary.legs.count - 1 {
-                    VStack {
-                        Image(systemName: "chevron.right.circle.fill")
-                            .frame(width: 8, height: 16)
-                    }
-                    .frame(height: 40)
-                }
+    private func legsFlow(itinerary: Itinerary) -> some View {
+        HStack(spacing: 4) {
+            ForEach(itinerary.legs, id: \.self) { leg in
+                legView(leg: leg)
             }
         }
     }
 
-    @ViewBuilder
-    private func legView(for leg: Leg) -> some View {
+    private func legView(leg: Leg) -> some View {
+        Group {
         switch viewModel.getLegViewType(for: leg) {
         case .vehicle:
             ItineraryLegVehicleView(leg: leg)
@@ -97,50 +102,28 @@ public struct TripPlannerSheetView: View {
             ItineraryLegUnknownView(leg: leg)
         }
     }
-
-    private func previewButton(itinerary: Itinerary) -> some View {
-        Button(action: {
-            viewModel.previewItinerary(itinerary)
-            dismiss()
-        }) {
-            Text("Preview")
-                .padding(30)
-                .background(Color.green)
-                .foregroundStyle(.foreground)
-                .fontWeight(.bold)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-        }
     }
 
-    // REFACTORED: Using the new NoRoutesFoundView
     private func noItinerariesView() -> some View {
-        NoRoutesFoundView(
-            originName: tripPlanner.originName,
-            destinationName: tripPlanner.destinationName
-        ) {
-            // Dismiss the entire TripPlannerSheetView
-            dismiss()
-            // Reset trip planner to show OriginDestinationView in parent
-            tripPlanner.resetTripPlanner()
+        VStack {
+            Text(viewModel.noTripPlannerMessage)
+                .foregroundStyle(.gray)
+                .padding()
         }
     }
 
     private func cancelButton() -> some View {
-        Button(action: {
+        Button("Cancel") {
             viewModel.cancelTripPlanning()
             dismiss()
-        }) {
-            Text("Cancel")
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.gray)
-                .foregroundStyle(.foreground)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(.horizontal, 16)
         }
+        .padding()
     }
 }
 
 #Preview {
-    TripPlannerSheetView()
+    let tripPlanner = TripPlannerServiceFactory.create(
+        baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!
+    )
+    return TripPlannerSheetView(tripPlanner: tripPlanner)
 }

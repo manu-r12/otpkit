@@ -15,13 +15,13 @@ import SwiftUI
 final class TripPlannerSheetViewModel {
 
     // MARK: - Dependencies
-    private let tripPlannerService: TripPlannerService
+    private let tripPlanner: TripPlannerCoordinatorService
 
     // MARK: - Published Properties
 
     /// Available itineraries from the plan response
     var availableItineraries: [Itinerary] {
-        tripPlannerService.planResponse?.plan?.itineraries ?? []
+        tripPlanner.planResponse?.plan?.itineraries ?? []
     }
 
     /// Whether there are itineraries to display
@@ -36,28 +36,28 @@ final class TripPlannerSheetViewModel {
 
     // MARK: - Initialization
 
-    init(tripPlannerService: TripPlannerService) {
-        self.tripPlannerService = tripPlannerService
+    init(tripPlanner: TripPlannerCoordinatorService) {
+        self.tripPlanner = tripPlanner
     }
 
     // MARK: - Public Methods
 
     /// Selects an itinerary and dismisses the sheet
     func selectItinerary(_ itinerary: Itinerary) {
-        tripPlannerService.selectedItinerary = itinerary
-        tripPlannerService.planResponse = nil
+        tripPlanner.selectedItinerary = itinerary
+        tripPlanner.clearPlanResponse()
     }
 
     /// Selects an itinerary, adjusts camera, and dismisses sheet
     func previewItinerary(_ itinerary: Itinerary) {
-        tripPlannerService.selectedItinerary = itinerary
-        tripPlannerService.planResponse = nil
-        tripPlannerService.adjustOriginDestinationCamera()
+        tripPlanner.selectedItinerary = itinerary
+        tripPlanner.clearPlanResponse()
+        tripPlanner.adjustOriginDestinationCamera()
     }
 
     /// Cancels trip planning and resets all data
     func cancelTripPlanning() {
-        tripPlannerService.resetTripPlanner()
+        tripPlanner.resetTripPlanner()
     }
 
     /// Generates appropriate leg view type based on transportation mode

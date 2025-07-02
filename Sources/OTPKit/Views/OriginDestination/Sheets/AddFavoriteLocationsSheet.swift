@@ -1,8 +1,8 @@
 //
 //  AddFavoriteLocationsSheet.swift
-//  OTPKitDemo
+//  OTPKit
 //
-//  Created by Hilmy Veradin on 03/07/24.
+//  Created by Hilmy Veradin on 18/07/24.
 //
 
 import SwiftUI
@@ -10,15 +10,17 @@ import SwiftUI
 /// This sheet responsible to add a new favorite location.
 /// Users can search and add their favorite locations
 public struct AddFavoriteLocationsSheet: View {
-    @Environment(\.dismiss) var dismiss
-    @Environment(OriginDestinationSheetEnvironment.self) private var sheetEnvironment
-    @Environment(TripPlannerService.self) private var tripPlanner
+    private let tripPlanner: TripPlannerCoordinatorService
+
+    public init(tripPlanner: TripPlannerCoordinatorService) {
+        self.tripPlanner = tripPlanner
+    }
 
     // MARK: - ViewModel
     private var viewModel: AddFavoriteLocationsViewModel {
         AddFavoriteLocationsViewModel(
             tripPlannerService: tripPlanner,
-            sheetEnvironment: sheetEnvironment,
+            sheetEnvironment: OriginDestinationSheetEnvironment(),
             userDefaultsService: UserDefaultsServices.shared
         )
     }
@@ -30,9 +32,10 @@ public struct AddFavoriteLocationsSheet: View {
 
     // MARK: - Body
     public var body: some View {
+        NavigationView {
         VStack {
             PageHeaderView(text: "Add Favorite") {
-                dismiss()
+                    // Implement the dismiss action
             }
             .padding()
 
@@ -82,6 +85,7 @@ public struct AddFavoriteLocationsSheet: View {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background(.regularMaterial)
+                }
             }
         }
     }
@@ -92,11 +96,11 @@ public struct AddFavoriteLocationsSheet: View {
     private func currentUserSection() -> some View {
         if viewModel.shouldShowCurrentUserSection {
             AddFavoriteCell(
-                title: viewModel.currentUserLocation?.title ?? "",
-                subtitle: viewModel.currentUserLocation?.subTitle ?? "",
+                title: viewModel.currentLocation?.title ?? "",
+                subtitle: viewModel.currentLocation?.subTitle ?? "",
                 action: {
                     viewModel.addCurrentUserLocationToFavorites()
-                    dismiss()
+                    // Implement the dismiss action
                 }
             )
         }
@@ -152,18 +156,21 @@ public struct AddFavoriteLocationsSheet: View {
 
     private func addLocationToFavorites(_ location: Location) {
         viewModel.addToFavorites(location)
-        dismiss()
+        // Implement the dismiss action
     }
 
     private func handleRecentLocationSelection() {
-        if let selectedLocation = sheetEnvironment.selectedRecentLocation,
+        if let selectedLocation = OriginDestinationSheetEnvironment.shared.selectedRecentLocation,
            !viewModel.favoriteLocations.contains(selectedLocation) {
             addLocationToFavorites(selectedLocation)
         }
-        sheetEnvironment.selectedRecentLocation = nil
+        OriginDestinationSheetEnvironment.shared.selectedRecentLocation = nil
     }
 }
 
 #Preview {
-    AddFavoriteLocationsSheet()
+    let tripPlanner = TripPlannerServiceFactory.create(
+        baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!
+    )
+    return AddFavoriteLocationsSheet(tripPlanner: tripPlanner)
 }

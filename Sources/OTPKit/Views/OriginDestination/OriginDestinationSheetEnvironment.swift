@@ -13,6 +13,7 @@ import SwiftUI
 /// - selectedValue: responsible for managing selected value when user taped the list in `OriginDestinationSheetView
 @Observable
 public final class OriginDestinationSheetEnvironment {
+    public static let shared = OriginDestinationSheetEnvironment()
     public var isSheetOpened = false
     public var selectedValue: String = ""
 

@@ -16,33 +16,33 @@ import MapKit
 final class DirectionSheetViewModel: BaseViewModel {
 
     // MARK: - Dependencies
-    private let tripPlannerService: TripPlannerService
+    private let tripPlanner: TripPlannerCoordinatorService
 
     // MARK: - Published Properties
 
     /// Current selected itinerary
     var selectedItinerary: Itinerary? {
-        tripPlannerService.selectedItinerary
+        tripPlanner.selectedItinerary
     }
 
     /// Origin coordinate
     var originCoordinate: CLLocationCoordinate2D? {
-        tripPlannerService.originCoordinate
+        tripPlanner.originCoordinate
     }
 
     /// Destination coordinate
     var destinationCoordinate: CLLocationCoordinate2D? {
-        tripPlannerService.destinationCoordinate
+        tripPlanner.destinationCoordinate
     }
 
     /// Origin name for display
     var originName: String {
-        tripPlannerService.originName
+        tripPlanner.originName
     }
 
     /// Destination name for display
     var destinationName: String {
-        tripPlannerService.destinationName
+        tripPlanner.destinationName
     }
 
     /// Page title
@@ -52,8 +52,8 @@ final class DirectionSheetViewModel: BaseViewModel {
 
     // MARK: - Initialization
 
-    init(tripPlannerService: TripPlannerService) {
-        self.tripPlannerService = tripPlannerService
+    init(tripPlanner: TripPlannerCoordinatorService) {
+        self.tripPlanner = tripPlanner
         super.init()
     }
 
@@ -61,12 +61,12 @@ final class DirectionSheetViewModel: BaseViewModel {
 
     /// Resets trip planner and dismisses directions
     public func resetTripPlanner() {
-        tripPlannerService.resetTripPlanner()
+        tripPlanner.resetTripPlanner()
     }
 
     /// Handles tap on coordinate and updates map camera
     public func handleCoordinateTap(_ coordinate: CLLocationCoordinate2D) {
-        tripPlannerService.changeMapCamera(to: coordinate)
+        tripPlanner.changeMapCamera(to: coordinate)
     }
 
     /// Handles tap on origin location

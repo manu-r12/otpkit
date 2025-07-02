@@ -293,31 +293,32 @@ public final class TripPlannerService: NSObject {
 
     /// Automatically fetch the Trip Planner if there's origin coordinate and destination coordinate
     private func checkAndFetchTripPlanner() {
-        guard originCoordinate != nil,
-              destinationCoordinate != nil
+        guard let originCoordinate = originCoordinate,
+              let destinationCoordinate = destinationCoordinate
         else {
             return
         }
 
-        let fromPlace = formatCoordinate(originCoordinate)
-        let toPlace = formatCoordinate(destinationCoordinate)
-
-        let tripDate = selectedDate?.formattedTripDate ?? getFormattedTodayDate()
-        let tripTime = selectedTime?.formattedTripTime ?? getCurrentTimeFormatted()
+        let request = TripPlanRequest.fromServiceData(
+            originCoordinate: originCoordinate,
+            destinationCoordinate: destinationCoordinate,
+            selectedDate: selectedDate,
+            selectedTime: selectedTime
+        )
 
         isFetchingResponse = true
 
         Task {
             do {
                 let response = try await apiClient.fetchPlan(
-                    fromPlace: fromPlace,
-                    toPlace: toPlace,
-                    time: tripTime,
-                    date: tripDate,
-                    mode: "TRANSIT,WALK",
-                    arriveBy: false,
-                    maxWalkDistance: 1000,
-                    wheelchair: false
+                    fromPlace: formatCoordinate(originCoordinate),
+                    toPlace: formatCoordinate(destinationCoordinate),
+                    time: request.time.formattedTripTime,
+                    date: request.date.formattedTripDate,
+                    mode: request.transportModesString,
+                    arriveBy: request.arriveBy,
+                    maxWalkDistance: request.maxWalkDistance,
+                    wheelchair: request.wheelchairAccessible
                 )
                 DispatchQueue.main.async {
                     self.planResponse = response

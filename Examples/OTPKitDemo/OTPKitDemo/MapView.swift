@@ -10,11 +10,15 @@ import OTPKit
 import SwiftUI
 
 struct MapView: View {
-    @Environment(TripPlannerService.self) private var tripPlanner
+    private let tripPlanner: TripPlannerCoordinatorService
+
+    init(tripPlanner: TripPlannerCoordinatorService) {
+        self.tripPlanner = tripPlanner
+    }
 
     var body: some View {
         ZStack {
-            TripPlannerExtensionView {
+            TripPlannerExtensionView(tripPlanner: tripPlanner) {
                 Map(position: tripPlanner.currentCameraPositionBinding, interactionModes: .all) {
                     tripPlanner.generateMarkers()
                     tripPlanner.generateMapPolyline()
@@ -32,10 +36,12 @@ struct MapView: View {
                 }
             }
         }
-
     }
 }
 
 #Preview {
-    MapView()
+    let tripPlanner = TripPlannerServiceFactory.create(
+        baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!
+    )
+    return MapView(tripPlanner: tripPlanner)
 }

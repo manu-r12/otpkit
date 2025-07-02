@@ -6,7 +6,7 @@ import MapKit
 struct OnboardingView: View {
     @Binding var hasCompletedOnboarding: Bool
     @Binding var selectedRegionURL: URL?
-    @Binding var tripPlannerService: TripPlannerService?
+    @Binding var tripPlannerService: TripPlannerCoordinatorService?
     @State private var selectedRegion: String = "Puget Sound"
 
     private let regions = [
@@ -25,31 +25,53 @@ struct OnboardingView: View {
     ]
 
     var body: some View {
-        VStack {
-            Spacer(minLength: 20)
-            Text("Welcome to OTPKitDemo!")
-                .bold()
-                .font(.title)
+        VStack(spacing: 20) {
+            Text("Select Your Region")
+                .font(.largeTitle)
+                .fontWeight(.bold)
+                .padding(.top, 50)
 
-            Text("Please choose your region.")
+            Text("Choose the transit system you'd like to use for trip planning")
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
 
-            List(Array(regions.keys.sorted()), id: \.self) { key in
-                Button {
-                    selectedRegion = key
-                } label: {
-                    HStack {
-                        Text(key)
-                        Spacer()
-                        if selectedRegion == key {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.blue)
+            Spacer()
+
+            VStack(spacing: 15) {
+                ForEach(Array(regions.keys.sorted()), id: \.self) { region in
+                    Button(action: {
+                        selectedRegion = region
+                    }) {
+                        HStack {
+                            Text(region)
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            Spacer()
+                            if selectedRegion == region {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.blue)
+                            }
                         }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(selectedRegion == region ? Color.blue.opacity(0.1) : Color.gray.opacity(0.1))
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(selectedRegion == region ? Color.blue : Color.clear, lineWidth: 2)
+                        )
                     }
+                    .buttonStyle(PlainButtonStyle())
                 }
-                .foregroundColor(.primary)
             }
+            .padding(.horizontal)
 
-            Button {
+            Spacer()
+
+            Button("Continue") {
                 let selection = regions[selectedRegion]!
 
                 // swiftlint:disable force_cast
@@ -59,31 +81,27 @@ struct OnboardingView: View {
 
                 selectedRegionURL = url
 
-                tripPlannerService = TripPlannerService(
-                    apiClient: RestAPI(baseURL: url),
-                    locationManager: CLLocationManager(),
-                    searchCompleter: MKLocalSearchCompleter()
-                )
+                tripPlannerService = TripPlannerServiceFactory.create(baseURL: url)
 
                 tripPlannerService?.changeMapCamera(to: center)
                 hasCompletedOnboarding = true
 
-            } label: {
-                Text("OK")
-                    .frame(maxWidth: .infinity, minHeight: 44)
             }
-            .buttonStyle(BorderedProminentButtonStyle())
+            .font(.headline)
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
             .padding()
+            .background(Color.blue)
+            .cornerRadius(10)
+            .padding(.horizontal)
+            .padding(.bottom, 50)
         }
-        .background(Color(UIColor.systemGroupedBackground))
     }
 }
 
 #Preview {
-    let planner = TripPlannerService(
-        apiClient: RestAPI(baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!),
-        locationManager: CLLocationManager(),
-        searchCompleter: MKLocalSearchCompleter()
+    let planner = TripPlannerServiceFactory.create(
+        baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!
     )
 
     return OnboardingView(

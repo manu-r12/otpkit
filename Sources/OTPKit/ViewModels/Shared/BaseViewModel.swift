@@ -42,8 +42,7 @@ open class BaseViewModel {
         if let otpError = error as? OTPKitError {
             currentError = otpError
         } else {
-            // Convert generic errors to OTPKitError
-            currentError = .apiError(error.localizedDescription)
+            currentError = .uiError(error.localizedDescription)
         }
         showErrorAlert = true
         isLoading = false

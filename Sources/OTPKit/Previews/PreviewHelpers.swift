@@ -10,11 +10,9 @@ import MapKit
 import SwiftUI
 
 class PreviewHelpers {
-    static func buildTripPlannerService() -> TripPlannerService {
-        TripPlannerService(
-            apiClient: RestAPI(baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!),
-            locationManager: CLLocationManager(),
-            searchCompleter: MKLocalSearchCompleter()
+    static func buildTripPlannerService() -> TripPlannerCoordinatorService {
+        TripPlannerServiceFactory.create(
+            baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!
         )
     }
 

@@ -2,28 +2,55 @@
 //  OriginDestinationView.swift
 //  OTPKit
 //
-//  Created by Hilmy Veradin on 05/07/24.
+//  Created by Hilmy Veradin on 18/07/24.
 //
 
-import MapKit
 import SwiftUI
 
 /// OriginDestinationView is the main view for setting up Origin/Destination in OTPKit.
 /// It consists a list of Origin and Destination along with the MapKit
 public struct OriginDestinationView: View {
-    @Environment(OriginDestinationSheetEnvironment.self) private var sheetEnvironment
-    @Environment(TripPlannerService.self) private var tripPlanner
+    // Data properties
+    private let originName: String
+    private let destinationName: String
+    private let canGetDirections: Bool
+    private let initialDate: Date
+    private let initialTime: Date
 
-    // State variables for date/time selection
-    @State private var selectedDate = Date()
-    @State private var selectedTime = Date()
-    @State private var isDatePickerVisible = false
-    @State private var isTimePickerVisible = false
+    // Action closures
+    private let onLocationTap: (OriginDestinationState) -> Void
+    private let onGetDirections: VoidBlock
+    private let onDateTimeChange: (Date, Date) -> Void
 
-    // Public Initializer
-    public init() {}
+    // Internal state for date/time pickers
+    @State private var selectedDate: Date
+    @State private var selectedTime: Date
 
-    private func originDestinationField(icon: String, text: String, action: @escaping () -> Void) -> some View {
+    public init(
+        originName: String,
+        destinationName: String,
+        canGetDirections: Bool,
+        initialDate: Date = Date(),
+        initialTime: Date = Date(),
+        onLocationTap: @escaping (OriginDestinationState) -> Void,
+        onGetDirections: @escaping VoidBlock,
+        onDateTimeChange: @escaping (Date, Date) -> Void = { _, _ in }
+    ) {
+        self.originName = originName
+        self.destinationName = destinationName
+        self.canGetDirections = canGetDirections
+        self.initialDate = initialDate
+        self.initialTime = initialTime
+        self.onLocationTap = onLocationTap
+        self.onGetDirections = onGetDirections
+        self.onDateTimeChange = onDateTimeChange
+
+        // Initialize state with provided values
+        self._selectedDate = State(initialValue: initialDate)
+        self._selectedTime = State(initialValue: initialTime)
+    }
+
+    private func originDestinationField(icon: String, text: String, action: @escaping VoidBlock) -> some View {
         Button(action: action, label: {
             HStack(spacing: 16) {
                 ZStack {
@@ -47,30 +74,31 @@ public struct OriginDestinationView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 0){
+            VStack(spacing: 0) {
                 // Origin Button
-                originDestinationField(icon: "paperplane.fill", text: tripPlanner.originName) {
-                    sheetEnvironment.isSheetOpened.toggle()
-                    tripPlanner.originDestinationState = .origin
+                originDestinationField(icon: "paperplane.fill", text: originName) {
+                    onLocationTap(.origin)
                 }
 
                 // Destination Button
-                originDestinationField(icon: "mappin", text: tripPlanner.destinationName) {
-                    sheetEnvironment.isSheetOpened.toggle()
-                    tripPlanner.originDestinationState = .destination
+                originDestinationField(icon: "mappin", text: destinationName) {
+                    onLocationTap(.destination)
                 }
 
                 // Date/Time Selector
                 DateTimeSelector(
                     selectedDate: $selectedDate,
                     selectedTime: $selectedTime,
-                    isDatePickerVisible: $isDatePickerVisible,
-                    isTimePickerVisible: $isTimePickerVisible
+                    onDateTimeChange: { date, time in
+                        onDateTimeChange(date, time)
+                    }
                 )
                 .background(Color(.secondarySystemBackground))
 
-                // Get directions button
-                getDirectionsButtonView()
+                // Get Directions Button
+                if canGetDirections {
+                    GetDirectionsButton(action: onGetDirections)
+                }
             }
             .cornerRadius(10)
             .padding(.horizontal)
@@ -78,25 +106,4 @@ public struct OriginDestinationView: View {
             .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
         }
     }
-
-    // MARK: DirectionsButton
-    private func getDirectionsButtonView() -> some View {
-        if let origin = tripPlanner.originCoordinate, let destination = tripPlanner.destinationCoordinate {
-            return AnyView(
-                GetDirectionsButton(
-                    originName: tripPlanner.originName,
-                    destinationName: tripPlanner.destinationName
-                ) {
-                    tripPlanner.fetchTrip()
-                }
-                    .padding(.top, 12)
-            )
-        } else {
-            return AnyView(EmptyView())
-        }
-    }
-}
-
-#Preview {
-    OriginDestinationView()
 }

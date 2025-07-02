@@ -16,49 +16,48 @@ import CoreLocation
 final class TripPlannerExtensionViewModel: BaseViewModel {
 
     // MARK: - Dependencies
-    private let tripPlannerService: TripPlannerService
-    private let sheetEnvironment: OriginDestinationSheetEnvironment
+    private let tripPlanner: TripPlannerCoordinatorService
 
     // MARK: - Computed Properties
 
     /// Whether the trip planner is currently fetching a response
     var isFetchingResponse: Bool {
-        tripPlannerService.isFetchingResponse
+        tripPlanner.isFetchingResponse
     }
 
     /// Whether map marking mode is active
     var isMapMarkingMode: Bool {
-        tripPlannerService.isMapMarkingMode
+        tripPlanner.isMapMarkingMode
     }
 
     /// Whether steps view is presented
     var isStepsViewPresented: Bool {
-        tripPlannerService.isStepsViewPresented
+        tripPlanner.isStepsViewPresented
     }
 
     /// Current selected itinerary
     var selectedItinerary: Itinerary? {
-        tripPlannerService.selectedItinerary
+        tripPlanner.selectedItinerary
     }
 
     /// Current plan response
     var planResponse: OTPResponse? {
-        tripPlannerService.planResponse
+        tripPlanner.planResponse
     }
 
     /// Binding for origin/destination sheet presentation
     var isOriginDestinationSheetPresented: Binding<Bool> {
-        sheetEnvironment.isSheetOpenedBinding
+        tripPlanner.isOriginDestinationSheetPresentedBinding
     }
 
     /// Binding for trip planner sheet presentation
     var isTripPlannerSheetPresented: Binding<Bool> {
-        tripPlannerService.isPlanResponsePresentedBinding
+        tripPlanner.isPlanResponsePresentedBinding
     }
 
     /// Binding for steps view presentation
     var isStepsViewSheetPresented: Binding<Bool> {
-        tripPlannerService.isStepsViewPresentedBinding
+        tripPlanner.isStepsViewPresentedBinding
     }
 
     // MARK: - Overlay State
@@ -71,7 +70,7 @@ final class TripPlannerExtensionViewModel: BaseViewModel {
             return .mapMarking
         } else if let _ = selectedItinerary, !isStepsViewPresented {
             return .tripPlanner
-        } else if planResponse == nil && !isStepsViewPresented {
+        } else if planResponse == nil {
             return .originDestination
         } else {
             return .none
@@ -80,10 +79,8 @@ final class TripPlannerExtensionViewModel: BaseViewModel {
 
     // MARK: - Initialization
 
-    init(tripPlannerService: TripPlannerService,
-         sheetEnvironment: OriginDestinationSheetEnvironment) {
-        self.tripPlannerService = tripPlannerService
-        self.sheetEnvironment = sheetEnvironment
+    init(tripPlanner: TripPlannerCoordinatorService) {
+        self.tripPlanner = tripPlanner
         super.init()
     }
 
@@ -91,7 +88,7 @@ final class TripPlannerExtensionViewModel: BaseViewModel {
 
     /// Called when view appears - checks location authorization
     func onViewAppear() {
-        tripPlannerService.checkLocationAuthorization()
+        tripPlanner.checkLocationAuthorization()
     }
 
     /// Handles map tap gesture for location marking
@@ -110,7 +107,7 @@ final class TripPlannerExtensionViewModel: BaseViewModel {
 
     /// Handles steps view dismissal
     func handleStepsViewDismissal() {
-        tripPlannerService.resetTripPlanner()
+        tripPlanner.resetTripPlanner()
     }
 
     /// Gets summary text for selected itinerary
@@ -134,7 +131,7 @@ final class TripPlannerExtensionViewModel: BaseViewModel {
         )
 
         await MainActor.run {
-            tripPlannerService.appendMarker(location: location)
+            tripPlanner.appendMarker(location: location)
         }
     }
 }

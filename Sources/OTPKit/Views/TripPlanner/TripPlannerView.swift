@@ -8,13 +8,19 @@
 import SwiftUI
 
 public struct TripPlannerView: View {
-    @Environment(TripPlannerService.self) private var tripPlanner
-
-    public init(text: String) {
-        self.text = text
-    }
-
     private let text: String
+    private let onCancel: VoidBlock
+    private let onStart: VoidBlock
+
+    public init(
+        text: String,
+        onCancel: @escaping VoidBlock,
+        onStart: @escaping VoidBlock
+    ) {
+        self.text = text
+        self.onCancel = onCancel
+        self.onStart = onStart
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -23,7 +29,7 @@ public struct TripPlannerView: View {
                 .padding(16)
             HStack {
                 Button(action: {
-                    tripPlanner.resetTripPlanner()
+                    onCancel()
                 }, label: {
                     Text("Cancel")
                         .frame(maxWidth: .infinity)
@@ -31,7 +37,7 @@ public struct TripPlannerView: View {
                 .buttonStyle(BorderedButtonStyle())
 
                 Button(action: {
-                    tripPlanner.isStepsViewPresented = true
+                    onStart()
                 }, label: {
                     Text("Start")
                         .frame(maxWidth: .infinity)
@@ -45,5 +51,13 @@ public struct TripPlannerView: View {
 }
 
 #Preview {
-    TripPlannerView(text: "43 minutes, departs at 4:15 PM")
+    TripPlannerView(
+        text: "43 minutes, departs at 4:15 PM",
+        onCancel: {
+            print("Cancel tapped")
+        },
+        onStart: {
+            print("Start tapped")
+        }
+    )
 }

@@ -7,14 +7,14 @@
 
 import SwiftUI
 
-struct GetDirectionsButton: View {
-    @Environment(TripPlannerService.self) private var tripPlanner
-    let originName: String
-    let destinationName: String
-
+public struct GetDirectionsButton: View {
     let action: VoidBlock
 
-    var body: some View {
+    public init(action: @escaping VoidBlock) {
+        self.action = action
+    }
+
+    public var body: some View {
         VStack {
             Button(action: {
                 action()
@@ -27,12 +27,10 @@ struct GetDirectionsButton: View {
                 }
                 .foregroundColor(.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-                .background(originName.isEmpty || destinationName.isEmpty ? Color.gray : Color.green)
+                .padding(.vertical, 16)
+                .background(Color.green)
                 .cornerRadius(12)
-                .opacity(originName.isEmpty || destinationName.isEmpty ? 0.6 : 1.0)
             }
-            .disabled(originName.isEmpty || destinationName.isEmpty)
         }
         .padding(.horizontal, 12)
     }

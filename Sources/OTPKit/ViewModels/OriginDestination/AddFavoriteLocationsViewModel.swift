@@ -2,56 +2,69 @@
 //  AddFavoriteLocationsViewModel.swift
 //  OTPKit
 //
-//  Created by Manu on 2025-06-06.
+//  Created by Hilmy Veradin on 18/07/24.
 //
 
 import Foundation
-import SwiftUI
+import CoreLocation
 
 /// ViewModel for AddFavoriteLocationsSheet
 /// Handles search, filtering, and favorite location management
 @Observable
-final class AddFavoriteLocationsViewModel: BaseViewModel {
+public final class AddFavoriteLocationsViewModel: BaseViewModel {
 
     // MARK: - Dependencies
-    private let tripPlannerService: TripPlannerService
+    private let tripPlannerService: TripPlannerCoordinatorService
     private let sheetEnvironment: OriginDestinationSheetEnvironment
     private let userDefaultsService: UserDefaultsServices
 
     // MARK: - Published Properties
 
     /// Current search text
-    var searchText: String = ""
+    public var searchText = ""
 
     /// Search focus state
-    var isSearchFocused: Bool = false
+    public var isSearchFocused = false
 
     /// Search completions from the trip planner service
-    var searchCompletions: [Location] {
+    public var completions: [Location] {
         tripPlannerService.completions
     }
 
     /// Favorite locations
-    var favoriteLocations: [Location] {
-        sheetEnvironment.favoriteLocations
+    public var favoriteLocations: [Location] {
+        switch userDefaultsService.getFavoriteLocationsData() {
+        case .success(let locations):
+            return locations
+        case .failure:
+            return []
+        }
     }
 
     /// Recent locations
-    var recentLocations: [Location] {
-        sheetEnvironment.recentLocations
+    public var recentLocations: [Location] {
+        switch userDefaultsService.getRecentLocations() {
+        case .success(let locations):
+            return locations
+        case .failure:
+            return []
+        }
     }
 
     /// Current user location
-    var currentUserLocation: Location? {
+    public var currentLocation: Location? {
         tripPlannerService.currentLocation
     }
+
+    /// Is all recent presented
+    public var isAllRecentPresented = false
 
     // MARK: - Computed Properties
 
     /// Filtered completions (excludes favorites)
     var filteredCompletions: [Location] {
         let favorites = favoriteLocations
-        return searchCompletions.filter { completion in
+        return completions.filter { completion in
             !favorites.contains { favorite in
                 favorite.title == completion.title &&
                 favorite.subTitle == completion.subTitle &&
@@ -81,7 +94,7 @@ final class AddFavoriteLocationsViewModel: BaseViewModel {
 
     /// Check if current location is already in favorites
     var isCurrentLocationFavorite: Bool {
-        guard let currentLocation = currentUserLocation else { return false }
+        guard let currentLocation = currentLocation else { return false }
         return favoriteLocations.contains { favorite in
             favorite.title == currentLocation.title &&
             favorite.subTitle == currentLocation.subTitle &&
@@ -92,7 +105,7 @@ final class AddFavoriteLocationsViewModel: BaseViewModel {
 
     /// Should show current user section
     var shouldShowCurrentUserSection: Bool {
-        searchText.isEmpty && currentUserLocation != nil && !isCurrentLocationFavorite
+        searchText.isEmpty && currentLocation != nil && !isCurrentLocationFavorite
     }
 
     /// Should show recent locations section
@@ -117,9 +130,11 @@ final class AddFavoriteLocationsViewModel: BaseViewModel {
 
     // MARK: - Initialization
 
-    init(tripPlannerService: TripPlannerService,
+    public init(
+        tripPlannerService: TripPlannerCoordinatorService,
          sheetEnvironment: OriginDestinationSheetEnvironment,
-         userDefaultsService: UserDefaultsServices) {
+        userDefaultsService: UserDefaultsServices
+    ) {
         self.tripPlannerService = tripPlannerService
         self.sheetEnvironment = sheetEnvironment
         self.userDefaultsService = userDefaultsService
@@ -129,37 +144,57 @@ final class AddFavoriteLocationsViewModel: BaseViewModel {
     // MARK: - Public Methods
 
     /// Updates search query and triggers completion search
-    func updateSearchQuery(_ query: String) {
+    public func updateSearchQuery(_ query: String) {
         searchText = query
         tripPlannerService.updateQuery(queryFragment: query)
     }
 
     /// Adds location to favorites
-    func addToFavorites(_ location: Location) {
-        executeTask {
-            switch self.userDefaultsService.saveFavoriteLocationData(data: location) {
-            case .success:
-                await MainActor.run {
-                    self.sheetEnvironment.refreshFavoriteLocations()
-                }
-            case .failure(let error):
-                throw OTPKitError.saveFailed("favorite location: \(error.localizedDescription)")
-            }
-        }
+    public func addToFavorites(_ location: Location) {
+        _ = userDefaultsService.saveFavoriteLocationData(data: location)
     }
 
     /// Adds current user location to favorites
-    func addCurrentUserLocationToFavorites() {
-        guard let userLocation = currentUserLocation else {
-            handleError(OTPKitError.locationUnavailable)
-            return
-        }
-        addToFavorites(userLocation)
+    public func addCurrentUserLocationToFavorites() {
+        guard let location = currentLocation else { return }
+        addToFavorites(location)
     }
 
     /// Refreshes data when view appears
-    func onViewAppear() {
-        sheetEnvironment.refreshFavoriteLocations()
-        sheetEnvironment.refreshRecentLocations()
+    public func onViewAppear() {
+        // Any setup needed when view appears
+    }
+
+    public func selectCurrentUserLocation() {
+        guard let location = currentLocation else { return }
+        selectLocation(location)
+    }
+
+    public func selectLocationOnMap() {
+        tripPlannerService.toggleMapMarkingMode(true)
+    }
+
+    public func selectLocation(_ location: Location) {
+        switch tripPlannerService.originDestinationState {
+        case .origin:
+            tripPlannerService.originName = location.title
+            tripPlannerService.originCoordinate = CLLocationCoordinate2D(
+                latitude: location.latitude,
+                longitude: location.longitude
+            )
+        case .destination:
+            tripPlannerService.destinationName = location.title
+            tripPlannerService.destinationCoordinate = CLLocationCoordinate2D(
+                latitude: location.latitude,
+                longitude: location.longitude
+            )
+        }
+        
+        _ = userDefaultsService.saveRecentLocations(data: location)
+    }
+
+    public override func clearError() {
+        currentError = nil
+        showErrorAlert = false
     }
 }

@@ -9,14 +9,17 @@ import SwiftUI
 ///
 public struct OriginDestinationSheetView: View {
     @Environment(\.dismiss) var dismiss
-    @Environment(OriginDestinationSheetEnvironment.self) private var sheetEnvironment
-    @Environment(TripPlannerService.self) private var tripPlanner
 
-    // MARK: - ViewModel (Lazy initialization)
-    private var viewModel: OriginDestinationSheetViewModel {
-        OriginDestinationSheetViewModel(
+    private let tripPlanner: TripPlannerCoordinatorService
+
+    // MARK: - ViewModel
+    private let viewModel: OriginDestinationSheetViewModel
+
+    public init(tripPlanner: TripPlannerCoordinatorService) {
+        self.tripPlanner = tripPlanner
+        self.viewModel = OriginDestinationSheetViewModel(
             tripPlannerService: tripPlanner,
-            sheetEnvironment: sheetEnvironment,
+            sheetEnvironment: OriginDestinationSheetEnvironment(),
             userDefaultsService: UserDefaultsServices.shared
         )
     }
@@ -39,39 +42,38 @@ public struct OriginDestinationSheetView: View {
     @State private var isShowFavoriteConfirmationDialog = false
 
     // MARK: - Initialization
-    public init() {}
-
-    // MARK: - Body
     public var body: some View {
-        VStack {
-            PageHeaderView(text: viewModel.pageTitle) {
-                dismiss()
-            }
-            .padding()
+        NavigationView {
+            VStack {
+                PageHeaderView(text: viewModel.pageTitle, action: {
+                    dismiss()
+                })
+                .padding()
 
-            SearchView(
-                placeholder: "Search for a place",
-                searchText: $searchText,
-                isSearchFocused: _isSearchFocused
-            )
-            .padding(.horizontal, 16)
-            .onChange(of: searchText) { _, newValue in
-                viewModel.updateSearchQuery(newValue)
-            }
-
-            List {
-                if searchText.isEmpty && isSearchFocused {
-                    currentUserSection()
-                } else if searchText.isEmpty {
-                    locationSelectionSection()
-                    favoritesSection()
-                    recentsSection()
-                } else {
-                    searchResultsSection()
+                SearchView(
+                    placeholder: "Search for a place",
+                    searchText: $searchText,
+                    isSearchFocused: _isSearchFocused
+                )
+                .padding(.horizontal, 16)
+                .onChange(of: searchText) { _, newValue in
+                    viewModel.updateSearchQuery(newValue)
                 }
-            }
 
-            Spacer()
+                List {
+                    if searchText.isEmpty && isSearchFocused {
+                        currentUserSection()
+                    } else if searchText.isEmpty {
+                        locationSelectionSection()
+                        favoritesSection()
+                        recentsSection()
+                    } else {
+                        searchResultsSection()
+                    }
+                }
+
+                Spacer()
+            }
         }
         .onAppear {
             viewModel.onViewAppear()
@@ -108,10 +110,10 @@ public struct OriginDestinationSheetView: View {
 
     @ViewBuilder
     private func currentUserSection() -> some View {
-        if viewModel.currentUserLocation != nil {
+        if viewModel.currentLocation != nil {
             Button(action: {
                 viewModel.selectCurrentUserLocation()
-                dismiss()
+                presentationManager.dismiss()
             }, label: {
                 VStack(alignment: .leading) {
                     Text("My Location")
@@ -148,14 +150,18 @@ public struct OriginDestinationSheetView: View {
 
     @ViewBuilder
     private func currentLocationAsOriginDestination() -> some View {
-        if viewModel.currentUserLocation != nil {
-            Button(action: {
+        if viewModel.currentLocation != nil {
+            Button(
+action: {
                 viewModel.selectCurrentUserLocation()
-                dismiss()
-            }, label: {
+                presentationManager.dismiss()
+            },
+ label: {
                 HStack {
                     Image(systemName: "mappin")
-                    Text("Set current location as \(viewModel.currentLocationType.capitalizedName)")
+                    Text(
+                        "Set current location as \(viewModel.currentLocation?.title ?? " ")"
+                    )
                 }
             })
             .buttonStyle(.plain)
@@ -172,11 +178,11 @@ public struct OriginDestinationSheetView: View {
                             imageName: "mappin",
                             tapAction: {
                                 viewModel.selectLocation(location)
-                                dismiss()
+                                presentationManager.dismiss()
                             },
                             longTapAction: {
                                 isShowFavoriteConfirmationDialog = true
-                                sheetEnvironment.selectedDetailFavoriteLocation = location
+                                OriginDestinationSheetEnvironment.shared.selectedDetailFavoriteLocation = location
                             }
                         )
                     }
@@ -200,7 +206,7 @@ public struct OriginDestinationSheetView: View {
                 ForEach(Array(viewModel.recentLocations.prefix(5))) { location in
                     Button {
                         viewModel.selectLocation(location)
-                        dismiss()
+                        presentationManager.dismiss()
                     } label: {
                         VStack(alignment: .leading) {
                             Text(location.title)
@@ -222,7 +228,7 @@ public struct OriginDestinationSheetView: View {
         ForEach(viewModel.filteredCompletions) { location in
             Button(action: {
                 viewModel.selectLocation(location)
-                dismiss()
+                presentationManager.dismiss()
             }, label: {
                 VStack(alignment: .leading) {
                     Text(location.title)
@@ -240,9 +246,9 @@ public struct OriginDestinationSheetView: View {
     private func sheetContent(for presentation: Modals) -> some View {
         switch presentation {
         case .addFavoriteSheet:
-            AddFavoriteLocationsSheet()
+            AddFavoriteLocationsSheet(tripPlanner: tripPlanner)
         case .moreFavoritesSheet:
-            MoreFavoriteLocationsSheet()
+            MoreFavoriteLocationsSheet(tripPlanner: tripPlanner)
         case .favoriteDetailsSheet:
             FavoriteLocationDetailSheet()
         case .moreRecentsSheet:
@@ -259,7 +265,7 @@ public struct OriginDestinationSheetView: View {
             })
 
             Button(role: .destructive, action: {
-                guard let location = sheetEnvironment.selectedDetailFavoriteLocation else { return }
+                guard let location = OriginDestinationSheetEnvironment.shared.selectedDetailFavoriteLocation else { return }
                 viewModel.removeFromFavorites(location)
             }, label: {
                 Text("Delete")
@@ -269,5 +275,8 @@ public struct OriginDestinationSheetView: View {
 }
 
 #Preview {
-    OriginDestinationSheetView()
+    let tripPlanner = TripPlannerServiceFactory.create(
+        baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!
+    )
+    return OriginDestinationSheetView(tripPlanner: tripPlanner)
 }

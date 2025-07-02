@@ -8,22 +8,22 @@
 import SwiftUI
 
 struct DateTimeSelector: View {
-    @Environment(TripPlannerService.self) private var tripPlanner
-    @Binding var selectedDate: Date
-    @Binding var selectedTime: Date
-    @Binding var isDatePickerVisible: Bool
-    @Binding var isTimePickerVisible: Bool
+    @Binding private var selectedDate: Date
+    @Binding private var selectedTime: Date
+    @State private var isDatePickerVisible: Bool = false
+    @State private var isTimePickerVisible: Bool = false
 
-    init(
+    // Optional callback for when values change (if needed for additional logic)
+    private let onDateTimeChange: ((Date, Date) -> Void)?
+
+    public init(
         selectedDate: Binding<Date>,
         selectedTime: Binding<Date>,
-        isDatePickerVisible: Binding<Bool>,
-        isTimePickerVisible: Binding<Bool>
+        onDateTimeChange: ((Date, Date) -> Void)? = nil
     ) {
         self._selectedDate = selectedDate
         self._selectedTime = selectedTime
-        self._isDatePickerVisible = isDatePickerVisible
-        self._isTimePickerVisible = isTimePickerVisible
+        self.onDateTimeChange = onDateTimeChange
     }
 
     var body: some View {
@@ -47,7 +47,7 @@ struct DateTimeSelector: View {
                     .padding()
                     .transition(.opacity)
                     .onChange(of: selectedDate) { _, newDate in
-                        tripPlanner.selectedDate = newDate
+                        onDateTimeChange?(newDate, selectedTime)
                     }
             }
 
@@ -60,7 +60,7 @@ struct DateTimeSelector: View {
                     .frame(maxHeight: 200)
                     .transition(.opacity)
                     .onChange(of: selectedTime) { _, newTime in
-                        tripPlanner.selectedTime = newTime
+                        onDateTimeChange?(selectedDate, newTime)
                     }
             }
         }

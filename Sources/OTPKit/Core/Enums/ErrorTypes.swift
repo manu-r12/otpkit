@@ -33,6 +33,9 @@ public enum OTPKitError: LocalizedError {
     // Data (basic save/delete for favorites)
     case saveFailed(String)
     case deleteFailed(String)
+
+    // UI-specific error
+    case uiError(String)
 }
 
 extension OTPKitError {
@@ -76,6 +79,8 @@ extension OTPKitError {
             return "Failed to delete \(item)"
         case .invalidCoordinates:
             return "Invalid Coordinates"
+        case .uiError(let message):
+            return message
         }
     }
 
@@ -94,6 +99,8 @@ extension OTPKitError {
             return "Save Error"
         case .invalidCoordinates:
             return "Invalid Coordinates"
+        case .uiError:
+            return "Error"
         }
     }
 
@@ -109,5 +116,10 @@ extension OTPKitError {
         default:
             return false
         }
+    }
+
+    /// User-friendly message for UI display
+    public var displayMessage: String {
+        return self.errorDescription ?? "An unknown error occurred."
     }
 }

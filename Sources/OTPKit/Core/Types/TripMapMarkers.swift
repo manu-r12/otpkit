@@ -8,23 +8,28 @@
 import Foundation
 
 /// Simple container for trip planning map markers
-struct TripMapMarkers {
-    var origin: MarkerItem?
-    var destination: MarkerItem?
+public struct TripMapMarkers {
+    public var origin: MarkerItem?
+    public var destination: MarkerItem?
+
+    public init() {
+        self.origin = nil
+        self.destination = nil
+    }
 
     /// Get all non-nil markers for map display
-    var allMarkers: [MarkerItem] {
+    public var allMarkers: [MarkerItem] {
         [origin, destination].compactMap { $0 }
     }
 
     /// Reset both markers
-    mutating func reset() {
+    public mutating func reset() {
         origin = nil
         destination = nil
     }
 
     /// Subscript for compatibility with OriginDestinationState
-    subscript(state: OriginDestinationState) -> MarkerItem? {
+    public subscript(state: OriginDestinationState) -> MarkerItem? {
         get {
             switch state {
             case .origin: return origin

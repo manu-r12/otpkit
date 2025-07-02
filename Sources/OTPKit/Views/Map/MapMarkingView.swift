@@ -2,7 +2,7 @@
 //  MapMarkingView.swift
 //  OTPKit
 //
-//  Created by Hilmy Veradin on 18/07/24.
+//  Created by Hilmy Veradin on 30/07/24.
 //
 
 import SwiftUI
@@ -10,9 +10,17 @@ import SwiftUI
 /// View for Map Marking Mode
 /// User able to add Marking directly from the map
 public struct MapMarkingView: View {
-    @Environment(TripPlannerService.self) private var tripPlanner
+    private let onCancel: VoidBlock
+    private let onAdd: VoidBlock
 
-    public init() {}
+    public init(
+        onCancel: @escaping VoidBlock,
+        onAdd: @escaping VoidBlock
+    ) {
+        self.onCancel = onCancel
+        self.onAdd = onAdd
+    }
+
     public var body: some View {
         VStack {
             Spacer()
@@ -23,27 +31,23 @@ public struct MapMarkingView: View {
                 .cornerRadius(16)
 
             HStack(spacing: 16) {
-                Button {
-                    tripPlanner.toggleMapMarkingMode(false)
-                    tripPlanner.selectAndRefreshCoordinate()
-                    tripPlanner.removeOriginDestinationData()
-                } label: {
+                Button(action: {
+                    onCancel()
+                }, label: {
                     Text("Cancel")
                         .padding(8)
                         .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
+                })
+                .buttonStyle(BorderedButtonStyle())
 
-                Button {
-                    tripPlanner.toggleMapMarkingMode(false)
-                    tripPlanner.addOriginDestinationData()
-                    tripPlanner.selectAndRefreshCoordinate()
-                } label: {
-                    Text("Add Pin")
+                Button(action: {
+                    onAdd()
+                }, label: {
+                    Text("Add")
                         .padding(8)
                         .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
+                })
+                .buttonStyle(BorderedProminentButtonStyle())
             }
             .frame(maxWidth: .infinity)
             .padding(16)
@@ -53,5 +57,12 @@ public struct MapMarkingView: View {
 }
 
 #Preview {
-    MapMarkingView()
+    MapMarkingView(
+        onCancel: {
+            print("Cancel tapped")
+        },
+        onAdd: {
+            print("Add tapped")
+        }
+    )
 }
