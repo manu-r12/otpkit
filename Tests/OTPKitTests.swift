@@ -23,7 +23,7 @@ class OTPKitTests: OTPTestCase {
     let soundTransitBaseURL = URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!
 
     func testPlanBasics() async throws {
-        let restApi = buildRestAPIClient()
+        let restApi = buildRestTripPlannerService()
 
         let dataLoader = restApi.dataLoader as! MockDataLoader
 

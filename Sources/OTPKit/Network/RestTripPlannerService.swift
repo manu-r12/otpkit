@@ -18,9 +18,9 @@ import Foundation
 
 // swiftlint:disable function_parameter_count
 
-/// An actor representing a REST API client for making network requests
-public actor RestAPI {
-    /// Initializes a new instance of RestAPI
+/// An actor that communicates with a REST API to provide trip planning data.
+public actor RestTripPlannerService: TripPlannerProvider {
+    /// Initializes a new instance of ``RestTripPlannerService``
     ///
     /// - Parameters:
     ///   - baseURL: The base URL for the API

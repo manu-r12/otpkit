@@ -60,7 +60,7 @@ struct OnboardingView: View {
                 selectedRegionURL = url
 
                 tripPlannerService = TripPlannerService(
-                    apiClient: RestAPI(baseURL: url),
+                    provider: RestTripPlannerService(baseURL: url),
                     locationManager: CLLocationManager(),
                     searchCompleter: MKLocalSearchCompleter()
                 )
@@ -81,7 +81,7 @@ struct OnboardingView: View {
 
 #Preview {
     let planner = TripPlannerService(
-        apiClient: RestAPI(baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!),
+        provider: RestTripPlannerService(baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!),
         locationManager: CLLocationManager(),
         searchCompleter: MKLocalSearchCompleter()
     )

@@ -12,7 +12,7 @@ import SwiftUI
 class PreviewHelpers {
     static func buildTripPlannerService() -> TripPlannerService {
         TripPlannerService(
-            apiClient: RestAPI(baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!),
+            provider: RestTripPlannerService(baseURL: URL(string: "https://otp.prod.sound.obaweb.org/otp/routers/default/")!),
             locationManager: CLLocationManager(),
             searchCompleter: MKLocalSearchCompleter()
         )

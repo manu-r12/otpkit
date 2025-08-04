@@ -15,7 +15,7 @@ import SwiftUI
 public final class TripPlannerService: NSObject {
     // MARK: - Properties
 
-    private let apiClient: RestAPI
+    private let provider: TripPlannerProvider
 
     // Trip Planner
     public var planResponse: OTPResponse?
@@ -85,11 +85,11 @@ public final class TripPlannerService: NSObject {
     /// Initializes a new instance of TripPlannerService
     ///
     /// - Parameters:
-    ///   - apiClient: The REST API client for making network requests
+    ///   - provider: A trip planner provider for making network requests
     ///   - locationManager: The location manager for handling user location
     ///   - searchCompleter: The search completer for location search functionality
-    public init(apiClient: RestAPI, locationManager: CLLocationManager, searchCompleter: MKLocalSearchCompleter) {
-        self.apiClient = apiClient
+    public init(provider: TripPlannerProvider, locationManager: CLLocationManager, searchCompleter: MKLocalSearchCompleter) {
+        self.provider = provider
         self.locationManager = locationManager
         self.searchCompleter = searchCompleter
         debounceInterval = 1
@@ -309,7 +309,7 @@ public final class TripPlannerService: NSObject {
 
         Task {
             do {
-                let response = try await apiClient.fetchPlan(
+                let response = try await provider.fetchPlan(
                     fromPlace: fromPlace,
                     toPlace: toPlace,
                     time: tripTime,
